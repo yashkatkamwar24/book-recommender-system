@@ -1,24 +1,35 @@
 # print("Book Recommender System")
-
+from fastapi import FastAPI, HTTPException
 import pandas as pd
+
+app = FastAPI()
 
 books = pd.read_csv("data/books.csv")
 
-# print(books)
-print(books.shape)
-print(books.head())
-print(books.columns)
-print(books.isnull().sum())
+@app.get("/")
+def home():
+    return {"msg" : "Book recommender System"}
 
-import nltk
+@app.get("/books")
+def view_books():
+    data = books.to_dict(orient="records")
+    return data
 
-nltk.download("punkt")
-nltk.download("punkt_tab")
+@app.get("/books/{book}")
+def get_book(book : str):
+    data = books.to_dict(orient="records")
+    book = book.lower()
 
-from nltk.tokenize import word_tokenize
+    for item in data:
+        if item["title"].lower() == book:
+            return item
+        
 
-text = "I want adventure books"
+    raise HTTPException(status_code=404, detail="book not found")
 
-words = word_tokenize(text)
 
-print(words)
+@app.get("/genres")
+def genres():
+
+    return list(books["genre"].unique())
+
