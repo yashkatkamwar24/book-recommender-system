@@ -14,12 +14,16 @@ vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(books["combined_text"])
 
 similarity_matrix = cosine_similarity(tfidf_matrix)
-# print(similarity_matrix.shape)
-# print(books[["title", "combined_text"]])
+
 
 def recommend_books(book_title):
     # Find the index of the selected books
-    book_index = books[books["title"].str.lower() == book_title.lower()].index[0]
+    matching_books = books[books["title"].str.lower() == book_title.lower()]
+
+    if matching_books.empty:
+        raise HTTPException(status_code=404, detail="book not found")
+
+    book_index = matching_books.index[0]
 
     # Get similarity score for the selected book
     similarity_scores = similarity_matrix[book_index]
@@ -37,8 +41,6 @@ def recommend_books(book_title):
         recommendation.append(books.iloc[index]["title"])
 
     return recommendation
-
-print(recommend_books("The Hobbit"))
 
 
 @app.get("/")
@@ -68,3 +70,14 @@ def genres():
 
     return list(books["genre"].unique())
 
+
+@app.get("/recommend/{book}")
+def recommend(book : str):
+
+    data = recommend_books(book)
+
+    return data
+
+
+
+    
