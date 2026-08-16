@@ -1,10 +1,19 @@
 # print("Book Recommender System")
 from fastapi import FastAPI, HTTPException
+from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 
 app = FastAPI()
 
 books = pd.read_csv("data/books.csv")
+
+books["combined_text"] = books["genre"] + " " + books["description"]
+
+vectorizer = TfidfVectorizer()
+tfidf_matrix = vectorizer.fit_transform(books["combined_text"])
+print(tfidf_matrix.shape)
+
+print(books[["title", "combined_text"]])
 
 @app.get("/")
 def home():
