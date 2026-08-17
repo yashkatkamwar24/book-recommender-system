@@ -38,7 +38,7 @@ def recommend_books(book_title):
     # Get the top 5 similar books, excluding the selected book
     recommendation = []
 
-    for index, score in book_scores[1:6]:
+    for index, score in book_scores[1:]:
         if score >= threshold:
             book = books.iloc[index]
             recommendation.append({
@@ -51,6 +51,41 @@ def recommend_books(book_title):
         if len(recommendation) == 5:
             break
 
+
+    return recommendation
+
+def recommend_by_query(query):
+
+    query_vector = vectorizer.transform([query])
+
+    similarity_scores = cosine_similarity(
+        query_vector,
+        tfidf_matrix
+    )[0]
+
+    book_scores = list(enumerate(similarity_scores))
+
+    book_scores = sorted(
+        book_scores,
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    recommendation = []
+
+    for index, score in book_scores:
+        if score >= threshold:
+            book = books.iloc[index]
+
+            recommendation.append({
+                "title": book["title"],
+                "genre": book["genre"],
+                "description": book["description"],
+                "similarity": round(float(score), 2)
+            })
+
+        if len(recommendation) == 5:
+            break
 
     return recommendation
 
@@ -93,6 +128,14 @@ def recommend(book : str):
         "recommendations" : data
         }
 
+@app.get("/recommend")
+def recommend_by_user_query(query : str):
+    data = recommend_by_query(query)
+
+    return {
+        "query" : query,
+        "recommendations" : data
+    }
 
 
     
