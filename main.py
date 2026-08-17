@@ -15,6 +15,7 @@ tfidf_matrix = vectorizer.fit_transform(books["combined_text"])
 
 similarity_matrix = cosine_similarity(tfidf_matrix)
 
+threshold = 0.10
 
 def recommend_books(book_title):
     # Find the index of the selected books
@@ -38,13 +39,18 @@ def recommend_books(book_title):
     recommendation = []
 
     for index, score in book_scores[1:6]:
-        book = books.iloc[index]
-        recommendation.append({
-            "title" : book["title"],
-            "genre" : book["genre"],
-            "description" : book["description"],
-            "similarity" : round(float(score), 2)
-        })
+        if score >= threshold:
+            book = books.iloc[index]
+            recommendation.append({
+                "title" : book["title"],
+                "genre" : book["genre"],
+                "description" : book["description"],
+                "similarity" : round(float(score), 2)
+            })
+
+        if len(recommendation) == 5:
+            break
+
 
     return recommendation
 
