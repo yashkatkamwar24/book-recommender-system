@@ -38,7 +38,13 @@ def recommend_books(book_title):
     recommendation = []
 
     for index, score in book_scores[1:6]:
-        recommendation.append(books.iloc[index]["title"])
+        book = books.iloc[index]
+        recommendation.append({
+            "title" : book["title"],
+            "genre" : book["genre"],
+            "description" : book["description"],
+            "similarity" : round(float(score), 2)
+        })
 
     return recommendation
 
@@ -76,7 +82,10 @@ def recommend(book : str):
 
     data = recommend_books(book)
 
-    return data
+    return {
+        "book" : book,
+        "recommendations" : data
+        }
 
 
 
