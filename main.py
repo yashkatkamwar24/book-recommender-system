@@ -1,4 +1,5 @@
 # print("Book Recommender System")
+from difflib import get_close_matches
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -10,7 +11,14 @@ app = FastAPI()
 
 books = pd.read_csv("data/books.csv")
 
+
 books["combined_text"] = books["title"] + " " + books["genre"] + " " + books["description"]
+
+text_vocabulary =set()
+for text in books["combined_text"]:
+    text_vocabulary.update(text.lower().split())
+
+vocabulary = list(text_vocabulary)
 
 vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(books["combined_text"])
@@ -34,6 +42,7 @@ class Recommendation_Response(BaseModel):
 class Query_Recommendation_Response(BaseModel):
 
     query: str
+    corrected_query: str
     recommendations: List[Book_Recommendation]
     message: str | None = None
 
@@ -74,8 +83,25 @@ def recommend_books(book_title):
 
     return recommendation
 
+def correct_query(query):
+
+    words = query.split()
+
+    corrected_words = []
+
+    for word in words:
+        matches = get_close_matches(word, vocabulary, n=1,cutoff=0.7)
+
+        if matches:
+            corrected_words.append(matches[0])
+        else:
+            corrected_words.append(word)
+
+    return " ".join(corrected_words)
+
 def recommend_by_query(query):
 
+    query = correct_query(query)
     query_vector = vectorizer.transform([query])
 
     similarity_scores = cosine_similarity(
@@ -107,7 +133,7 @@ def recommend_by_query(query):
         if len(recommendation) == 5:
             break
 
-    return recommendation
+    return query, recommendation
 
 
 @app.get("/")
@@ -151,17 +177,22 @@ def recommend(book : str):
 
 @app.get("/recommend",response_model=Query_Recommendation_Response)
 def recommend_by_user_query(query : str = Query(..., min_length=3, description="Minimum 3 characters are required")):
-    data = recommend_by_query(query)
+
+    query = " ".join(query.strip().lower().split())
+
+    corrected_query, data = recommend_by_query(query)
 
     if not data:
         return {
             "query" : query,
+            "corrected_query": corrected_query,
             "recommendations" : [],
             "message" : "No suitable books found for this query."
         }
 
     return {
         "query" : query,
+        "corrected_query": corrected_query,
         "recommendations" : data,
         "message" : "Books found successfully."
     }
