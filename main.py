@@ -1,8 +1,10 @@
 # print("Book Recommender System")
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+from typing import List
 
 app = FastAPI()
 
@@ -16,6 +18,23 @@ tfidf_matrix = vectorizer.fit_transform(books["combined_text"])
 similarity_matrix = cosine_similarity(tfidf_matrix)
 
 threshold = 0.10
+
+class Book_Recommendation(BaseModel):
+
+    title: str
+    genre: str
+    description: str
+    similarity: float
+
+class Recommendation_Response(BaseModel):
+
+    book: str
+    recommendations: List[Book_Recommendation]
+
+class Query_Recommendation_Response(BaseModel):
+
+    query: str
+    recommendations: List[Book_Recommendation]
 
 def recommend_books(book_title):
     # Find the index of the selected books
@@ -118,7 +137,7 @@ def genres():
     return list(books["genre"].unique())
 
 
-@app.get("/recommend/{book}")
+@app.get("/recommend/{book}",response_model=Recommendation_Response)
 def recommend(book : str):
 
     data = recommend_books(book)
@@ -128,7 +147,7 @@ def recommend(book : str):
         "recommendations" : data
         }
 
-@app.get("/recommend")
+@app.get("/recommend",response_model=Query_Recommendation_Response)
 def recommend_by_user_query(query : str = Query(..., min_length=3, description="Minimum 3 characters are required")):
     data = recommend_by_query(query)
 
