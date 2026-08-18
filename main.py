@@ -35,13 +35,14 @@ class Query_Recommendation_Response(BaseModel):
 
     query: str
     recommendations: List[Book_Recommendation]
+    message: str | None = None
 
 def recommend_books(book_title):
     # Find the index of the selected books
     matching_books = books[books["title"].str.lower() == book_title.lower()]
 
     if matching_books.empty:
-        raise HTTPException(status_code=404, detail="book not found")
+        raise HTTPException(status_code=404, detail=f"book '{book_title}' not found")
 
     book_index = matching_books.index[0]
 
@@ -121,6 +122,7 @@ def view_books():
 @app.get("/books/{book}")
 def get_book(book : str):
     data = books.to_dict(orient="records")
+    original_book = book
     book = book.lower()
 
     for item in data:
@@ -128,7 +130,7 @@ def get_book(book : str):
             return item
         
 
-    raise HTTPException(status_code=404, detail="book not found")
+    raise HTTPException(status_code=404, detail=f"book '{original_book}' not found")
 
 
 @app.get("/genres")
@@ -151,10 +153,17 @@ def recommend(book : str):
 def recommend_by_user_query(query : str = Query(..., min_length=3, description="Minimum 3 characters are required")):
     data = recommend_by_query(query)
 
+    if not data:
+        return {
+            "query" : query,
+            "recommendations" : [],
+            "message" : "No suitable books found for this query."
+        }
+
     return {
         "query" : query,
-        "recommendations" : data
+        "recommendations" : data,
+        "message" : "Books found successfully."
     }
-
 
     
