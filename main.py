@@ -1,5 +1,5 @@
 # print("Book Recommender System")
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
@@ -129,7 +129,7 @@ def recommend(book : str):
         }
 
 @app.get("/recommend")
-def recommend_by_user_query(query : str):
+def recommend_by_user_query(query : str = Query(..., min_length=3, description="Minimum 3 characters are required")):
     data = recommend_by_query(query)
 
     return {
