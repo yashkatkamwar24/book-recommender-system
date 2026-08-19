@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 from typing import List
+import re
 
 app = FastAPI()
 
@@ -113,11 +114,34 @@ def detect_genre(query):
 
     return None
 
+def clean_query(query):
+
+    stop_words = {
+        "i", "want", "something", "please", "give",
+        "me", "a", "an", "the", "book", "books",
+        "about", "for", "of", "to", "with", "that",
+        "some", "looking", "look", "find", "need"
+    }
+
+    words = query.lower().split()
+
+    cleaned_words = []
+
+    for word in words:
+        word = re.sub(r"[^a-zA-Z]", "", word)
+
+        if word and word not in stop_words:
+            cleaned_words.append(word)
+
+    return " ".join(cleaned_words)
+
 def recommend_by_query(query):
 
     corrected_query = correct_query(query)
 
-    query_vector = vectorizer.transform([corrected_query])
+    cleaned_query = clean_query(corrected_query)
+
+    query_vector = vectorizer.transform([cleaned_query])
 
     similarity_scores = cosine_similarity(
         query_vector,
@@ -151,6 +175,9 @@ def recommend_by_query(query):
     recommendation = []
 
     for index, score in book_scores:
+
+        if score < threshold:
+            continue
 
         book = books.iloc[index]
 
