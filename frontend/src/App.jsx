@@ -22,11 +22,16 @@ function App() {
 
       const data = await response.json();
 
+      console.log("Original query:", data.query);
+      console.log("Corrected query:", data.corrected_query);
+      console.log("Recommendations:", data.recommendations);
+
       if (!response.ok) {
         throw new Error(data.detail || "Something went wrong");
       }
 
       setRecommendations(data.recommendations);
+      
     } catch (error) {
       console.error(error);
       setError("Unable to get recommendations. Please try again.");
