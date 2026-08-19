@@ -101,17 +101,46 @@ def correct_query(query):
 
     return " ".join(corrected_words)
 
+def detect_genre(query):
+
+    query = query.lower()
+
+    genres = books["genre"].dropna().unique()
+
+    for genre in genres:
+        if genre.lower() in query:
+            return genre
+
+    return None
+
 def recommend_by_query(query):
 
-    query = correct_query(query)
-    query_vector = vectorizer.transform([query])
+    corrected_query = correct_query(query)
+
+    query_vector = vectorizer.transform([corrected_query])
 
     similarity_scores = cosine_similarity(
         query_vector,
         tfidf_matrix
     )[0]
 
-    book_scores = list(enumerate(similarity_scores))
+    detected_genre = detect_genre(corrected_query)
+
+    book_scores = []
+
+    for index, score in enumerate(similarity_scores):
+
+        book = books.iloc[index]
+
+        final_score = float(score)
+
+        # Give a small boost to books
+        # belonging to the requested genre
+        if detected_genre:
+            if book["genre"].lower() == detected_genre.lower():
+                final_score += 0.20
+
+        book_scores.append((index, final_score))
 
     book_scores = sorted(
         book_scores,
@@ -122,21 +151,20 @@ def recommend_by_query(query):
     recommendation = []
 
     for index, score in book_scores:
-        if score >= threshold:
-            book = books.iloc[index]
 
-            recommendation.append({
-                "title": book["title"],
-                "genre": book["genre"],
-                "description": book["description"],
-                "similarity": round(float(score), 2)
-            })
+        book = books.iloc[index]
+
+        recommendation.append({
+            "title": book["title"],
+            "genre": book["genre"],
+            "description": book["description"],
+            "similarity": round(min(float(score), 1.0), 2)
+        })
 
         if len(recommendation) == 5:
             break
 
-    return query, recommendation
-
+    return corrected_query, recommendation
 
 @app.get("/")
 def home():
