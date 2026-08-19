@@ -1,11 +1,21 @@
 import "./App.css";
 import { useState } from "react";
+import hobbitCover from "./assets/the_hobbit_cover.png";
+import treasureIslandCover from "./assets/treasure_island_cover.png";
+import pridePrejudiceCover from "./assets/pride_and_prejudice_cover.png";
+import bookPlaceholder from "./assets/book_placeholder.png";
 
 function App() {
   const [query, setQuery] = useState("");
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const bookCovers = {
+  "The Hobbit": hobbitCover,
+  "Treasure Island": treasureIslandCover,
+  "Pride and Prejudice": pridePrejudiceCover,
+};
 
   async function handleRecommend() {
     if (!query.trim()) {
@@ -31,7 +41,7 @@ function App() {
       }
 
       setRecommendations(data.recommendations);
-      
+
     } catch (error) {
       console.error(error);
       setError("Unable to get recommendations. Please try again.");
@@ -76,6 +86,13 @@ function App() {
           <div className="book-container">
             {recommendations.map((book) => (
               <div className="book-card" key={book.title}>
+                {bookCovers[book.title] && (
+                  <img
+                  src = {bookCovers[book.title] || bookPlaceholder}
+                  alt = {book.title}
+                  className="book_cover"
+                  />
+                )}
                 <div className="book-info">
                   <h3>{book.title}</h3>
 
