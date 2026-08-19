@@ -1,53 +1,39 @@
 import "./App.css";
 import { useState } from "react";
 
-import hobbitCover from "./assets/the_hobbit_cover.png";
-import treasureIslandCover from "./assets/treasure_island_cover.png";
-import pridePrejudiceCover from "./assets/pride_and_prejudice_cover.png";
-
 function App() {
   const [query, setQuery] = useState("");
   const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleRecommend() {
+  async function handleRecommend() {
     if (!query.trim()) {
       return;
     }
 
-    const books = [
-      {
-        title: "The Hobbit",
-        author: "J.R.R. Tolkien",
-        genre: "Adventure",
-        rating: 4.8,
-        popularity: "Very Popular",
-        description:
-          "An exciting fantasy adventure about a hobbit who goes on an unexpected journey.",
-        cover: hobbitCover,
-      },
-      {
-        title: "Treasure Island",
-        author: "Robert Louis Stevenson",
-        genre: "Adventure",
-        rating: 4.6,
-        popularity: "Popular",
-        description:
-          "A thrilling pirate adventure involving treasure, ships, and a mysterious island.",
-        cover: treasureIslandCover,
-      },
-      {
-        title: "Pride and Prejudice",
-        author: "Jane Austen",
-        genre: "Romance",
-        rating: 4.7,
-        popularity: "Classic",
-        description:
-          "A classic romantic story about love, relationships, and social expectations.",
-        cover: pridePrejudiceCover,
-      },
-    ];
+    setLoading(true);
+    setError("");
 
-    setRecommendations(books);
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/recommend?query=${encodeURIComponent(query)}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Something went wrong");
+      }
+
+      setRecommendations(data.recommendations);
+    } catch (error) {
+      console.error(error);
+      setError("Unable to get recommendations. Please try again.");
+      setRecommendations([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -69,10 +55,14 @@ function App() {
               onChange={(e) => setQuery(e.target.value)}
             />
 
-            <button onClick={handleRecommend}>Recommend</button>
+            <button onClick={handleRecommend}>
+              {loading ? "Finding..." : "Recommend"}
+            </button>
           </div>
 
           {query && <p>You searched for: {query}</p>}
+
+          {error && <p className="error">{error}</p>}
         </div>
 
         <section className="recommendations">
@@ -81,29 +71,29 @@ function App() {
           <div className="book-container">
             {recommendations.map((book) => (
               <div className="book-card" key={book.title}>
-                <img
-                  src={book.cover}
-                  alt={`${book.title} book cover`}
-                  className="book-cover"
-                />
-
                 <div className="book-info">
                   <h3>{book.title}</h3>
 
-                  <p className="author">by {book.author}</p>
-
                   <p className="genre">{book.genre}</p>
 
-                  <div className="book-meta">
-                    <span>⭐ {book.rating}</span>
-                    <span>🔥 {book.popularity}</span>
-                  </div>
+                  <p className="similarity">
+                    ⭐ Match: {(book.similarity * 100).toFixed(0)}%
+                  </p>
 
-                  <p className="description">{book.description}</p>
+                  <p className="description">
+                    {book.description}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
+
+          {!loading &&
+            recommendations.length === 0 &&
+            !error &&
+            query && (
+              <p>No suitable books found.</p>
+            )}
         </section>
       </main>
     </div>

@@ -1,6 +1,7 @@
 # print("Book Recommender System")
 from difflib import get_close_matches
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -9,6 +10,7 @@ from typing import List
 
 app = FastAPI()
 
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173","http://127.0.0.1:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"],)
 books = pd.read_csv("data/books.csv")
 
 
